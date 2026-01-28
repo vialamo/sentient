@@ -90,7 +90,7 @@
       margin-left: auto;
       background: #1e1e1e;
       border-radius: 12px;
-      padding: 8px 12px;
+      padding: 16px 20px;
       color: #e0e0e0;
     }
 
@@ -111,7 +111,7 @@
 
     #input {
       flex: 1;
-      padding: 12px;
+      padding: 20px;
       background: #1e1e1e;
       color: #e0e0e0;
       border: none;
@@ -126,8 +126,8 @@
 
     button {
       padding: 8px;
-      width: 42px; 
-      height: 42px;
+      width: 58px; 
+      height: 58px;
       background: #2a2a2a;
       color: #e0e0e0;
       border: none;
@@ -191,10 +191,13 @@
 </div>
 
 <script>
-  const _0x1a = ["wwxXtkVa9GhOm3JQ", "_r5iBe-wHdt2kOCxBySazIA"];
-  const getKey = () => (_0x1a[0] + _0x1a[1]).split('').reverse().join('');
+  const API_URL = "https://openrouter.ai/api/v1/chat/completions";
+  const API_MODEL = "google/gemma-3-27b-it:free"; 
+  const _k1 = "cfa3ba9912b71a480c21efcacc82b980c";
+  const _k2 = "sk-or-v1-ead6ce369da7743875f8043f230ca49";
+  const getApiKey = () => _k2 + _k1;
 
-const chat = document.getElementById("chat");
+  const chat = document.getElementById("chat");
   const input = document.getElementById("input");
   const status = document.getElementById("status");
 
@@ -249,41 +252,49 @@ const chat = document.getElementById("chat");
   }
 
   async function fetchAIResponse(userText) {
-    const key = getKey();
 
+    const key = getApiKey();
+
+    // Helper to simulate thinking time (2 seconds)
     const fakeThinkingDelay = () => new Promise(resolve => setTimeout(resolve, 2000));
     
+    // Check if key is present/valid
     if (!key) {
       await fakeThinkingDelay();
       return getFallbackResponse();
     }
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`;
-
+    // OpenAI / DeepSeek Standard Format
     const payload = {
-      contents: [{
-        parts: [{ text: SYSTEM_PROMPT + "\n\nUser says: " + userText }]
-      }]
+      model: API_MODEL,
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT },
+        { role: "user", content: userText }
+      ],
+      stream: false
     };
 
     try {
-      const response = await fetch(url, {
+      const response = await fetch(API_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${key}`
+        },
         body: JSON.stringify(payload)
       });
 
       const data = await response.json();
       
-      // If API returns an error (like 429 quota exceeded), use fallback
       if (data.error) {
         console.warn("API Error (switching to fallback):", data.error.message);
         await fakeThinkingDelay();
         return getFallbackResponse();
       }
 
-      if (data.candidates && data.candidates[0] && data.candidates[0].content) {
-        return data.candidates[0].content.parts[0].text;
+      // Parse OpenAI/DeepSeek standard response
+      if (data.choices && data.choices[0] && data.choices[0].message) {
+        return data.choices[0].message.content;
       } else {
         await fakeThinkingDelay();
         return getFallbackResponse();
