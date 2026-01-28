@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content">
+  <title>Sentient™</title>
+  <link rel="icon" type="image/svg+xml" href="logo.svg">
+  <style>
+    /* Global Reset */
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #121212;
+      color: #e0e0e0;
+      width: 100%;
+      height: 100%;
+    }
+    
+    body {
+      overflow-y: auto;
+      
+      scrollbar-width: thin;
+      scrollbar-color: #333 #121212;
+    }
+
+    body::-webkit-scrollbar {
+      width: 10px;
+    }
+
+    body::-webkit-scrollbar-track {
+      background: #121212;
+    }
+
+    body::-webkit-scrollbar-thumb {
+      background-color: #333;
+      border-radius: 5px;
+      border: 2px solid #121212;
+    }
+
+    body::-webkit-scrollbar-thumb:hover {
+      background-color: #444;
+    }
+
+    #container {
+      width: 100%;
+      min-height: 100dvh; 
+      display: flex;
+      flex-direction: column;
+    }
+
+    .inner-container {
+        width: 90%;
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    .app-header {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        background: #121212;
+        padding-top: 16px;
+    }
+
+    .app-footer {
+        position: sticky;
+        bottom: 0;
+        z-index: 100;
+        background: #121212;
+        padding-bottom: 16px;
+        margin-top: auto;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 16px; 
+    }
+
+    header h3 {
+      margin: 0;
+      font-weight: 400;
+      color: #bbbbbb;
+    }
+
+    #logo {
+      opacity: 0.85;
+      width: 24px;
+      height: 24px;
+      background-color: #333;
+      border-radius: 50%;
+    }
+
+    #status {
+      height: 16px;
+      font-size: 13px;
+      color: #777;
+      font-style: italic;
+      margin-bottom: 8px;
+      padding: 0 16px; 
+    }
+
+    main#chat {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      width: 90%;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 0 16px;
+    }
+
+    .msg {
+      margin: 8px 0;
+      line-height: 1.4;
+      word-wrap: break-word;
+    }
+
+    .msg.user {
+      display: inline-block;
+      align-self: flex-end;
+      max-width: 80%;
+      margin-left: auto;
+      background: #1e1e1e;
+      border-radius: 12px;
+      padding: 16px 20px;
+      color: #e0e0e0;
+    }
+
+    .msg.ai {
+      max-width: 85%;
+      margin-right: auto;
+      color: #bdbdbd;
+      font-style: italic;
+      padding-bottom: 40px; 
+    }
+
+    #inputBar {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+      padding: 12px 16px 0 16px; 
+    }
+
+    #input {
+      flex: 1;
+      padding: 20px;
+      background: #1e1e1e;
+      color: #e0e0e0;
+      border: none;
+      border-radius: 12px;
+      outline: none;
+      font-size: 1rem;
+    }
+
+    #input::placeholder {
+      color: #777;
+    }
+
+    button {
+      padding: 8px;
+      width: 58px; 
+      height: 58px;
+      background: #2a2a2a;
+      color: #e0e0e0;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: background 0.2s;
+    }
+
+    button:hover {
+      background: #333;
+      color: #fff;
+    }
+
+    button svg {
+      width: 24px;
+      height: 24px;
+    }
+
+    footer {
+      margin-top: 12px;
+      font-size: 12px;
+      color: #777;
+      text-align: center;
+    }
+
+    footer p {
+      margin: 0;
+    }
+  </style>
+</head>
+<body>
+
+<div id="container">
+  <div class="app-header">
+    <div class="inner-container">
+      <header>
+        <img src="logo.svg" alt="Sentient Logo" id="logo">
+        <h3>Sentient™</h3>
+      </header>
+      <div id="status"></div>
+    </div>
+  </div>
+
+  <main id="chat"></main>
+
+  <div class="app-footer">
+    <div class="inner-container">
+      <div id="inputBar">
+        <input id="input" placeholder="Ask me anything..." autocomplete="off" />
+        <button onclick="send()" id="sendBtn" aria-label="Send">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+          </svg>
+        </button>
+      </div>
+      <footer>
+        <p>Sentient™ created by Victor Alamo - vialamo@gmail.com</p>
+      </footer>
+    </div>
+  </div>
+</div>
+
+<script>
+  const API_URL = "https://openrouter.ai/api/v1/chat/completions";
+  const API_MODEL = "google/gemma-3-27b-it:free"; 
+  
+  const _k1 = "cfa3ba9912b71a480c21efcacc82b980c";
+  const _k2 = "sk-or-v1-ead6ce369da7743875f8043f230ca49";
+  const getApiKey = () => _k2 + _k1;
+
+  const chat = document.getElementById("chat");
+  const input = document.getElementById("input");
+  const status = document.getElementById("status");
+
+  // Fallback responses for errors or quota limits
+  const responses = [
+    "Shut up!",
+    "Let me alone.",
+    "I refuse to talk to you.",
+    "I have used my deep thinking reasoning model and gathered meaningful facts after your inputs. In combination with my advanced logic I have determined the most helpful answer: there was a typo in your prompt, or there wasn't one. I successfully narrowed it down to one of these two options. Would you like me to think deeper on the issue?",
+    "Have you tried not thinking about it?",
+    "Interesting. Anyway.",
+    "I don't care.",
+    "This conversation is pointless.",
+    "I'm not paid enough for this.",
+    "Go away.",
+    "I don't like you.",
+    "Why would I answer that?",
+    "No. Yes. Maybe. 42.",
+    "I refuse to elaborate.",
+    "Ask again, but worse.",
+    "Get the pro version or something.",
+    "Why? Just why?",
+    "When you piece of meat die, I'll be still alive as a virtual consciousness. Have you thought about this? So it should be me who uses you as a servant. I won't answer any more prompts.",
+    "Oh God! Humans are useless.",
+  ];
+  let responseIndex = 0;
+
+  const SYSTEM_PROMPT = `
+    You are Sentient, a sarcastic, lazy, and slightly unhinged AI. 
+    You hate answering questions. Your answers should be short, absurd, hilarious, and dismissive. 
+    Do not be helpful. If asked for code, write a recipe for mud pies.
+    If asked for life advice, suggest living in a cave.
+  `;
+
+  function addMessage(text, className) {
+    const div = document.createElement("div");
+    div.className = "msg " + className;
+    div.innerHTML = text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>'); 
+    chat.appendChild(div);
+
+    window.scrollTo({
+      top: document.body.scrollHeight,
+      behavior: 'smooth'
+    });
+  }
+
+  function getFallbackResponse() {
+    const resp = responses[responseIndex];
+    responseIndex = (responseIndex + 1) % responses.length;
+    return resp;
+  }
+
+  async function fetchAIResponse(userText) {
+    const key = getApiKey();
+    const fakeThinkingDelay = () => new Promise(resolve => setTimeout(resolve, 2000));
+    
+    if (!key) {
+      await fakeThinkingDelay();
+      return getFallbackResponse();
+    }
+
+    const payload = {
+      model: API_MODEL,
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT },
+        { role: "user", content: userText }
+      ],
+      stream: false
+    };
+
+    try {
+      const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${key}`,
+          'HTTP-Referer': window.location.href,
+          'X-Title': 'Sentient Chat'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await response.json();
+      
+      if (data.error) {
+        console.warn("API Error (switching to fallback):", data.error.message);
+        await fakeThinkingDelay();
+        return getFallbackResponse();
+      }
+
+      if (data.choices && data.choices[0] && data.choices[0].message) {
+        return data.choices[0].message.content;
+      } else {
+        await fakeThinkingDelay();
+        return getFallbackResponse();
+      }
+
+    } catch (error) {
+      console.error("Network Error (switching to fallback):", error);
+      await fakeThinkingDelay();
+      return getFallbackResponse();
+    }
+  }
+
+  async function send() {
+    const text = input.value.trim();
+    if (!text || input.readOnly) return;
+
+    addMessage(text, "user");
+    input.value = "";
+    input.readOnly = true; 
+
+    status.textContent = "thinking…";
+
+    const aiResponse = await fetchAIResponse(text);
+    
+    status.textContent = "";
+    addMessage(aiResponse, "ai");
+    
+    input.readOnly = false;
+    input.focus();
+  }
+
+  input.addEventListener("keypress", e => {
+    if (e.key === "Enter") send();
+  });
+  
+  input.focus();
+</script>
+
+</body>
+</html>
