@@ -262,7 +262,7 @@
 
     addMessage(text, "user");
     input.value = "";
-    input.disabled = true;
+    input.readOnly = true;
 
     status.textContent = "thinking…";
 
@@ -270,7 +270,7 @@
     
     status.textContent = "";
     addMessage(aiResponse, "ai");
-    input.disabled = false;
+    input.readOnly = false;
     input.focus();
   }
 
