@@ -114,6 +114,7 @@
       max-width: 800px;
       margin: 0 auto;
       padding: 0 16px;
+      justify-content: flex-end; 
     }
 
     .msg {
@@ -368,7 +369,7 @@
   input.addEventListener("keypress", e => {
     if (e.key === "Enter") send();
   });
-
+  
   if (window.visualViewport) {
     window.visualViewport.addEventListener('resize', () => {
       if (document.activeElement === input) {
