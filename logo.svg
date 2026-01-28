@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 64 64"
+     width="64"
+     height="64">
+
+  <!-- Brain outline -->
+  <path d="
+    M32 10
+    C24 10 18 15 18 22
+    C14 24 12 28 12 32
+    C12 38 16 42 22 42
+    C24 48 28 52 32 52
+    C36 52 40 48 42 42
+    C48 42 52 38 52 32
+    C52 28 50 24 46 22
+    C46 15 40 10 32 10
+  "
+  fill="none"
+  stroke="white"
+  stroke-width="2.5"
+  stroke-linecap="round"
+  stroke-linejoin="round"/>
+
+  <!-- Circuit lines -->
+  <path d="M32 18 V28" stroke="white" stroke-width="2" stroke-linecap="round"/>
+  <path d="M26 22 H20" stroke="white" stroke-width="2" stroke-linecap="round"/>
+  <path d="M38 22 H44" stroke="white" stroke-width="2" stroke-linecap="round"/>
+  <path d="M26 32 H18" stroke="white" stroke-width="2" stroke-linecap="round"/>
+  <path d="M38 32 H46" stroke="white" stroke-width="2" stroke-linecap="round"/>
+  <path d="M32 36 V46" stroke="white" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- Circuit nodes -->
+  <circle cx="20" cy="22" r="2" fill="white"/>
+  <circle cx="44" cy="22" r="2" fill="white"/>
+  <circle cx="18" cy="32" r="2" fill="white"/>
+  <circle cx="46" cy="32" r="2" fill="white"/>
+  <circle cx="32" cy="46" r="2" fill="white"/>
+
+</svg>

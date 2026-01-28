@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sentient™</title>
+  <link rel="icon" type="image/svg+xml" href="logo.svg">
+  <style>
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #121212;
+      color: #e0e0e0;
+      display: flex;
+      justify-content: center;
+      overflow-y: auto; 
+    }
+
+    #container {
+      width: 90%;
+      max-width: 800px;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      box-sizing: border-box;
+    }
+
+    .sticky-header {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background: #121212;
+        padding: 16px 16px 0 16px;
+    }
+
+    .sticky-footer {
+        position: sticky;
+        bottom: 0;
+        z-index: 10;
+        background: #121212;
+        padding: 0 16px 16px 16px;
+        margin-top: auto;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    header h3 {
+      margin: 0;
+      font-weight: 400;
+      color: #bbbbbb;
+    }
+
+    #logo {
+      opacity: 0.85;
+      width: 24px;
+      height: 24px;
+      background-color: #333;
+      border-radius: 50%;
+    }
+
+    #status {
+      height: 16px;
+      font-size: 13px;
+      color: #777;
+      font-style: italic;
+      margin-bottom: 8px;
+    }
+
+    main#chat {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      padding: 0 16px;
+    }
+
+    .msg {
+      margin: 8px 0;
+      line-height: 1.4;
+      word-wrap: break-word;
+    }
+
+    .msg.user {
+      display: inline-block;
+      align-self: flex-end;
+      max-width: 80%;
+      margin-left: auto;
+      background: #1e1e1e;
+      border-radius: 12px;
+      padding: 8px 12px;
+      color: #e0e0e0;
+    }
+
+    .msg.ai {
+      max-width: 85%;
+      margin-right: auto;
+      color: #bdbdbd;
+      font-style: italic;
+      padding-bottom: 40px; 
+    }
+
+    #inputBar {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+      padding-top: 12px;
+    }
+
+    #input {
+      flex: 1;
+      padding: 12px;
+      background: #1e1e1e;
+      color: #e0e0e0;
+      border: none;
+      border-radius: 12px;
+      outline: none;
+      font-size: 1rem;
+    }
+
+    #input::placeholder {
+      color: #777;
+    }
+
+    button {
+      padding: 8px;
+      width: 42px; 
+      height: 42px;
+      background: #2a2a2a;
+      color: #e0e0e0;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: background 0.2s;
+    }
+
+    button:hover {
+      background: #333;
+      color: #fff;
+    }
+
+    button svg {
+      width: 24px;
+      height: 24px;
+    }
+
+    footer {
+      margin-top: 12px;
+      font-size: 12px;
+      color: #777;
+      text-align: center;
+    }
+
+    footer p {
+      margin: 0;
+    }
+  </style>
+</head>
+<body>
+
+<div id="container">
+  <div class="sticky-header">
+      <header>
+        <img src="logo.svg" alt="Sentient Logo" id="logo">
+        <h3>Sentient™</h3>
+      </header>
+      <div id="status"></div>
+  </div>
+
+  <main id="chat"></main>
+
+  <div class="sticky-footer">
+      <div id="inputBar">
+        <input id="input" placeholder="Ask me anything..." autocomplete="off" />
+        <button onclick="send()" id="sendBtn" aria-label="Send">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+          </svg>
+        </button>
+      </div>
+      <footer>
+        <p>Sentient™ created by Victor Alamo - vialamo@gmail.com</p>
+      </footer>
+  </div>
+</div>
+
+<script>
+  const _0x1a = ["wwxXtkVa9GhOm3JQ", "_r5iBe-wHdt2kOCxBySazIA"];
+  const getKey = () => (_0x1a[0] + _0x1a[1]).split('').reverse().join('');
+
+  const chat = document.getElementById("chat");
+  const input = document.getElementById("input");
+  const status = document.getElementById("status");
+
+  const SYSTEM_PROMPT = `
+    You are Sentient, a sarcastic, lazy, and slightly unhinged AI. 
+    You hate answering questions. Your answers should be short, absurd, hilarious, and dismissive. 
+    Do not be helpful. If asked for code, write a recipe for mud pies.
+    If asked for life advice, suggest living in a cave.
+  `;
+
+  function addMessage(text, className) {
+    const div = document.createElement("div");
+    div.className = "msg " + className;
+    // Handle Markdown-style bolding if the AI uses it (simple version)
+    div.innerHTML = text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>'); 
+    chat.appendChild(div);
+
+    window.scrollTo({
+      top: document.body.scrollHeight,
+      behavior: 'smooth'
+    });
+  }
+
+  async function fetchAIResponse(userText) {
+    const key = getKey();
+    if (!key) {
+      return "ERROR: Key missing.";
+    }
+
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${key}`;
+
+    const payload = {
+      contents: [{
+        parts: [{ text: SYSTEM_PROMPT + "\n\nUser says: " + userText }]
+      }]
+    };
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await response.json();
+      
+      if (data.error) {
+        console.error("API Error:", data.error);
+        return "I'm refusing to think right now. (API Error)";
+      }
+
+      // Extract the text from the response structure
+      const aiText = data.candidates[0].content.parts[0].text;
+      return aiText;
+
+    } catch (error) {
+      console.error("Network Error:", error);
+      return "My brain is disconnected. Check your internet.";
+    }
+  }
+
+  async function send() {
+    const text = input.value.trim();
+    if (!text) return;
+
+    addMessage(text, "user");
+    input.value = "";
+    input.disabled = true;
+
+    status.textContent = "thinking…";
+
+    const aiResponse = await fetchAIResponse(text);
+    
+    status.textContent = "";
+    addMessage(aiResponse, "ai");
+    input.disabled = false;
+    input.focus();
+  }
+
+  input.addEventListener("keypress", e => {
+    if (e.key === "Enter") send();
+  });
+  
+  input.focus();
+</script>
+
+</body>
+</html>
