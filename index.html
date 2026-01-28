@@ -2,43 +2,77 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content">
   <title>Sentient™</title>
   <link rel="icon" type="image/svg+xml" href="logo.svg">
   <style>
-    body {
-      margin: 0;
-      font-family: system-ui, -apple-system, sans-serif;
-      background: #121212;
-      color: #e0e0e0;
-      display: flex;
-      justify-content: center;
-      overflow-y: auto; 
-    }
-
-    #container {
-      width: 90%;
-      max-width: 800px;
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
+    /* Global Reset */
+    * {
       box-sizing: border-box;
     }
 
-    .sticky-header {
-        position: sticky;
-        top: 0;
-        z-index: 10;
-        background: #121212;
-        padding: 16px 16px 0 16px;
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #121212;
+      color: #e0e0e0;
+      width: 100%;
+      height: 100%;
+    }
+    
+    body {
+      overflow-y: auto;
+      
+      scrollbar-width: thin;
+      scrollbar-color: #333 #121212;
     }
 
-    .sticky-footer {
+    body::-webkit-scrollbar {
+      width: 10px;
+    }
+
+    body::-webkit-scrollbar-track {
+      background: #121212;
+    }
+
+    body::-webkit-scrollbar-thumb {
+      background-color: #333;
+      border-radius: 5px;
+      border: 2px solid #121212;
+    }
+
+    body::-webkit-scrollbar-thumb:hover {
+      background-color: #444;
+    }
+
+    #container {
+      width: 100%;
+      min-height: 100dvh; 
+      display: flex;
+      flex-direction: column;
+    }
+
+    .inner-container {
+        width: 90%;
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    .app-header {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        background: #121212;
+        padding-top: 16px;
+    }
+
+    .app-footer {
         position: sticky;
         bottom: 0;
-        z-index: 10;
+        z-index: 100;
         background: #121212;
-        padding: 0 16px 16px 16px;
+        padding-bottom: 16px;
         margin-top: auto;
     }
 
@@ -46,6 +80,7 @@
       display: flex;
       align-items: center;
       gap: 10px;
+      padding: 0 16px; 
     }
 
     header h3 {
@@ -68,12 +103,16 @@
       color: #777;
       font-style: italic;
       margin-bottom: 8px;
+      padding: 0 16px; 
     }
 
     main#chat {
       display: flex;
       flex-direction: column;
       flex: 1;
+      width: 90%;
+      max-width: 800px;
+      margin: 0 auto;
       padding: 0 16px;
     }
 
@@ -106,7 +145,7 @@
       display: flex;
       gap: 8px;
       margin-top: 12px;
-      padding-top: 12px;
+      padding: 12px 16px 0 16px; 
     }
 
     #input {
@@ -165,17 +204,20 @@
 <body>
 
 <div id="container">
-  <div class="sticky-header">
+  <div class="app-header">
+    <div class="inner-container">
       <header>
         <img src="logo.svg" alt="Sentient Logo" id="logo">
         <h3>Sentient™</h3>
       </header>
       <div id="status"></div>
+    </div>
   </div>
 
   <main id="chat"></main>
 
-  <div class="sticky-footer">
+  <div class="app-footer">
+    <div class="inner-container">
       <div id="inputBar">
         <input id="input" placeholder="Ask me anything..." autocomplete="off" />
         <button onclick="send()" id="sendBtn" aria-label="Send">
@@ -187,12 +229,14 @@
       <footer>
         <p>Sentient™ created by Victor Alamo - vialamo@gmail.com</p>
       </footer>
+    </div>
   </div>
 </div>
 
 <script>
   const API_URL = "https://openrouter.ai/api/v1/chat/completions";
   const API_MODEL = "google/gemma-3-27b-it:free"; 
+  
   const _k1 = "cfa3ba9912b71a480c21efcacc82b980c";
   const _k2 = "sk-or-v1-ead6ce369da7743875f8043f230ca49";
   const getApiKey = () => _k2 + _k1;
@@ -235,7 +279,6 @@
   function addMessage(text, className) {
     const div = document.createElement("div");
     div.className = "msg " + className;
-    // Handle Markdown-style bolding if the AI uses it (simple version)
     div.innerHTML = text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>'); 
     chat.appendChild(div);
 
@@ -252,19 +295,14 @@
   }
 
   async function fetchAIResponse(userText) {
-
     const key = getApiKey();
-
-    // Helper to simulate thinking time (2 seconds)
     const fakeThinkingDelay = () => new Promise(resolve => setTimeout(resolve, 2000));
     
-    // Check if key is present/valid
-    if (!key) {
+    if (!key || key.startsWith("PASTE")) {
       await fakeThinkingDelay();
       return getFallbackResponse();
     }
 
-    // OpenAI / DeepSeek Standard Format
     const payload = {
       model: API_MODEL,
       messages: [
@@ -279,7 +317,9 @@
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${key}`
+          'Authorization': `Bearer ${key}`,
+          'HTTP-Referer': window.location.href,
+          'X-Title': 'Sentient Chat'
         },
         body: JSON.stringify(payload)
       });
@@ -292,7 +332,6 @@
         return getFallbackResponse();
       }
 
-      // Parse OpenAI/DeepSeek standard response
       if (data.choices && data.choices[0] && data.choices[0].message) {
         return data.choices[0].message.content;
       } else {
@@ -309,18 +348,14 @@
 
   async function send() {
     const text = input.value.trim();
-    // Prevent empty or overlapping sends
     if (!text || input.readOnly) return;
 
     addMessage(text, "user");
     input.value = "";
-    
-    // 'readOnly' keeps the keyboard open (stable viewport).
     input.readOnly = true; 
 
     status.textContent = "thinking…";
 
-    // Fetch response (from API or Fallback)
     const aiResponse = await fetchAIResponse(text);
     
     status.textContent = "";
@@ -333,7 +368,18 @@
   input.addEventListener("keypress", e => {
     if (e.key === "Enter") send();
   });
-  
+
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', () => {
+      if (document.activeElement === input) {
+        window.scrollTo({
+          top: document.body.scrollHeight,
+          behavior: 'smooth'
+        });
+      }
+    });
+  }
+
   input.focus();
 </script>
 
