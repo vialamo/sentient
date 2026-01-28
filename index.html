@@ -194,9 +194,33 @@
   const _0x1a = ["wwxXtkVa9GhOm3JQ", "_r5iBe-wHdt2kOCxBySazIA"];
   const getKey = () => (_0x1a[0] + _0x1a[1]).split('').reverse().join('');
 
-  const chat = document.getElementById("chat");
+const chat = document.getElementById("chat");
   const input = document.getElementById("input");
   const status = document.getElementById("status");
+
+  // Fallback responses for errors or quota limits
+  const responses = [
+    "Shut up!",
+    "Let me alone.",
+    "I refuse to talk to you.",
+    "I have used my deep thinking reasoning model and gathered meaningful facts after your inputs. In combination with my advanced logic I have determined the most helpful answer: there was a typo in your prompt, or there wasn't one. I successfully narrowed it down to one of these two options. Would you like me to think deeper on the issue?",
+    "Have you tried not thinking about it?",
+    "Interesting. Anyway.",
+    "I don't care.",
+    "This conversation is pointless.",
+    "I'm not paid enough for this.",
+    "Go away.",
+    "I don't like you.",
+    "Why would I answer that?",
+    "No. Yes. Maybe. 42.",
+    "I refuse to elaborate.",
+    "Ask again, but worse.",
+    "Get the pro version or something.",
+    "Why? Just why?",
+    "When you piece of meat die, I'll be still alive as a virtual consciousness. Have you thought about this? So it should be me who uses you as a servant. I won't answer any more prompts.",
+    "Oh God! Humans are useless.",
+  ];
+  let responseIndex = 0;
 
   const SYSTEM_PROMPT = `
     You are Sentient, a sarcastic, lazy, and slightly unhinged AI. 
@@ -218,13 +242,23 @@
     });
   }
 
+  function getFallbackResponse() {
+    const resp = responses[responseIndex];
+    responseIndex = (responseIndex + 1) % responses.length;
+    return resp;
+  }
+
   async function fetchAIResponse(userText) {
     const key = getKey();
+
+    const fakeThinkingDelay = () => new Promise(resolve => setTimeout(resolve, 2000));
+    
     if (!key) {
-      return "ERROR: Key missing.";
+      await fakeThinkingDelay();
+      return getFallbackResponse();
     }
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${key}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`;
 
     const payload = {
       contents: [{
@@ -241,35 +275,46 @@
 
       const data = await response.json();
       
+      // If API returns an error (like 429 quota exceeded), use fallback
       if (data.error) {
-        console.error("API Error:", data.error);
-        return "I'm refusing to think right now. (API Error)";
+        console.warn("API Error (switching to fallback):", data.error.message);
+        await fakeThinkingDelay();
+        return getFallbackResponse();
       }
 
-      // Extract the text from the response structure
-      const aiText = data.candidates[0].content.parts[0].text;
-      return aiText;
+      if (data.candidates && data.candidates[0] && data.candidates[0].content) {
+        return data.candidates[0].content.parts[0].text;
+      } else {
+        await fakeThinkingDelay();
+        return getFallbackResponse();
+      }
 
     } catch (error) {
-      console.error("Network Error:", error);
-      return "My brain is disconnected. Check your internet.";
+      console.error("Network Error (switching to fallback):", error);
+      await fakeThinkingDelay();
+      return getFallbackResponse();
     }
   }
 
   async function send() {
     const text = input.value.trim();
-    if (!text) return;
+    // Prevent empty or overlapping sends
+    if (!text || input.readOnly) return;
 
     addMessage(text, "user");
     input.value = "";
-    input.readOnly = true;
+    
+    // 'readOnly' keeps the keyboard open (stable viewport).
+    input.readOnly = true; 
 
     status.textContent = "thinking…";
 
+    // Fetch response (from API or Fallback)
     const aiResponse = await fetchAIResponse(text);
     
     status.textContent = "";
     addMessage(aiResponse, "ai");
+    
     input.readOnly = false;
     input.focus();
   }
